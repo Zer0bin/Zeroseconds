@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>제로세컨즈 | 사용자 설정</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div class="max-w-md mx-auto mt-20 bg-white p-8 rounded shadow">
+    <h2 class="text-2xl font-bold mb-6 text-center">닉네임 및 멘토 설정</h2>
+    <form id="user-form" class="space-y-4">
+      <div>
+        <label class="block mb-1 font-medium">닉네임</label>
+        <input type="text" id="nickname" class="w-full border px-3 py-2 rounded" placeholder="ex) 창업러민지" required>
+      </div>
+      <div class="flex items-center">
+        <input type="checkbox" id="isMentor" class="mr-2">
+        <label for="isMentor">전문가 멘토입니다</label>
+      </div>
+      <button type="submit" class="w-full bg-green-600 text-white py-2 rounded">저장하고 시작하기</button>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById("user-form").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const nickname = document.getElementById("nickname").value.trim();
+      const isMentor = document.getElementById("isMentor").checked;
+      if (!nickname) return alert("닉네임을 입력해주세요.");
+
+      localStorage.setItem("userNickname", nickname);
+      localStorage.setItem("userMentor", isMentor);
+
+      // 멘토 닉네임 목록에 추가 (임시 로컬 저장 방식)
+      let mentorNames = localStorage.getItem("userMentorNames") || "";
+      const nameList = mentorNames.split(",").filter(Boolean);
+      if (isMentor && !nameList.includes(nickname)) {
+        nameList.push(nickname);
+        localStorage.setItem("userMentorNames", nameList.join(","));
+      }
+
+      // 홈으로 이동
+      window.location.href = "index.html";
+    });
+  </script>
+</body>
+</html>

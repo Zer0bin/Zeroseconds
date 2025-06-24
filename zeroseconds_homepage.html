@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>제로세컨즈 | 창업가 커뮤니티</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-white text-gray-800">
+  <div class="max-w-3xl mx-auto mt-10">
+    <h1 class="text-2xl font-bold mb-4">제로세컨즈 Q&A</h1>
+
+    <form onsubmit="submitQuestion(event)" class="mb-6">
+      <input id="question-title" type="text" placeholder="질문을 입력하세요" class="w-full border px-3 py-2 rounded mb-2">
+      <button class="bg-green-600 text-white px-4 py-2 rounded">질문 등록</button>
+    </form>
+
+    <div id="question-list" class="p-4 space-y-4"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCV-ItueTCjbuHnVQqpcYb5vkRsf2zMcXU",
+      authDomain: "sec-44e76.firebaseapp.com",
+      projectId: "sec-44e76",
+      storageBucket: "sec-44e76.firebasestorage.app",
+      messagingSenderId: "573561144547",
+      appId: "1:573561144547:web:433f70ce3db05c05ed71d6",
+      measurementId: "G-D11E63PZ1G"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const nickname = localStorage.getItem("userNickname") || "익명";
+    const isMentor = localStorage.getItem("userMentor") === "true";
+
+    async function submitQuestion(event) {
+      event.preventDefault();
+      const title = document.getElementById("question-title").value;
+      if (!title || !nickname) return;
+
+      const now = new Date();
+      const date = now.toISOString().split("T")[0];
+
+      const docRef = await addDoc(collection(db, "questions"), {
+        title,
+        author: nickname,
+        date,
+        locked: title.includes("[멘토]")
+      });
+
+      document.getElementById("question-title").value = "";
+      await loadQuestions();
+    }
+
+    async function submitComment(event, questionId) {
+      event.preventDefault();
+      const input = document.getElementById(`comment-input-${questionId}`);
+      const content = input.value;
+      if (!content || !nickname) return;
+
+      const now = new Date();
+      const date = now.toISOString().split("T")[0];
+
+      await addDoc(collection(db, `questions/${questionId}/comments`), {
+        content,
+        author: nickname,
+        date,
+        isMentor
+      });
+
+      input.value = "";
+      await loadQuestions();
+    }
+
+    async function deleteComment(questionId, commentId) {
+      await deleteDoc(doc(db, `questions/${questionId}/comments/${commentId}`));
+      await loadQuestions();
+    }
+
+    async function loadComments(questionId, container) {
+      container.innerHTML = "";
+      const q = query(collection(db, `questions/${questionId}/comments`), orderBy("date"));
+      const snapshot = await getDocs(q);
+      snapshot.forEach(docSnap => {
+        const { content, author, date, isMentor } = docSnap.data();
+        const badge = isMentor ? "<span class='text-blue-600 font-bold ml-2'>✔멘토</span>" : "";
+        const p = document.createElement("p");
+        p.className = "flex justify-between items-center";
+        p.innerHTML = `<span><strong>${author}</strong> ${badge}: ${content}</span>`;
+
+        if (author === nickname) {
+          const delBtn = document.createElement("button");
+          delBtn.textContent = "삭제";
+          delBtn.className = "text-xs text-red-500 ml-2 hover:underline";
+          delBtn.onclick = () => deleteComment(questionId, docSnap.id);
+          p.appendChild(delBtn);
+        }
+
+        container.appendChild(p);
+      });
+    }
+
+    async function loadQuestions() {
+      const container = document.getElementById("question-list");
+      container.innerHTML = "";
+
+      const q = query(collection(db, "questions"), orderBy("date", "desc"));
+      const snapshot = await getDocs(q);
+      snapshot.forEach(async docSnap => {
+        const { title, author, date, locked } = docSnap.data();
+        const questionId = docSnap.id;
+        const badge = author && localStorage.getItem("userMentorNames")?.split(",").includes(author) ? "<span class='text-blue-600 font-bold ml-2'>✔멘토</span>" : "";
+
+        const div = document.createElement("div");
+        div.className = "py-4 border-b";
+
+        if (locked) {
+          div.innerHTML = `
+            <h4 class="font-semibold text-lg">🔒 ${title}</h4>
+            <p class="text-sm text-gray-500 italic">전문가 멘토만 볼 수 있는 질문입니다.</p>
+          `;
+        } else {
+          div.innerHTML = `
+            <h4 class="font-semibold text-lg">${title}</h4>
+            <p class="text-sm text-gray-600">${date} • by ${author} ${badge}</p>
+            <form onsubmit="submitComment(event, '${questionId}')" class="mt-2">
+              <input id="comment-input-${questionId}" type="text" placeholder="댓글을 입력하세요" class="w-full border px-2 py-1 rounded mb-1">
+              <button class="bg-blue-500 text-white px-3 py-1 rounded">댓글 등록</button>
+            </form>
+            <div id="comment-list-${questionId}" class="mt-2 space-y-1 text-sm"></div>
+          `;
+          container.prepend(div);
+          const commentContainer = div.querySelector(`#comment-list-${questionId}`);
+          await loadComments(questionId, commentContainer);
+        }
+      });
+    }
+
+    window.submitQuestion = submitQuestion;
+    window.submitComment = submitComment;
+    loadQuestions();
+  </script>
+</body>
+</html>

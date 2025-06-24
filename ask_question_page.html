@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <!-- Pretendard Font -->
+  <link href="https://cdn.jsdelivr.net/npm/pretendard@1.3.5/dist/web/static/pretendard.css" rel="stylesheet" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>제로세컨즈 | 모든 창업의 시작점</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCV-ItueTCjbuHnVQqpcYb5vkRsf2zMcXU",
+      authDomain: "sec-44e76.firebaseapp.com",
+      projectId: "sec-44e76",
+      storageBucket: "sec-44e76.appspot.com",
+      messagingSenderId: "573561144547",
+      appId: "1:573561144547:web:433f70ce3db05c05ed71d6",
+      measurementId: "G-D11E63PZ1G"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      const questionList = document.getElementById("question-list");
+      const q = query(collection(db, "questions"), orderBy("createdAt", "desc"));
+      const querySnapshot = await getDocs(q);
+
+      questionList.innerHTML = ""; // 기존 내용 제거
+      querySnapshot.forEach(doc => {
+        const data = doc.data();
+        const tags = (data.tags || []).map(tag => `<span class='inline-block bg-[#3a3a3a] text-[#FFC400] text-xs font-medium px-2 py-1 rounded-full mr-2'>#${tag}</span>`).join(' ');
+
+        questionList.innerHTML += `
+          <a href="question.html?id=${doc.id}" class="block bg-[#1a1a1a] rounded-lg shadow p-4">
+            <h4 class="text-lg font-bold text-[#D50000]">Q. ${data.title}</h4>
+            <p class="text-gray-300 mt-2">${data.content?.slice(0, 60) || ''}...</p>
+            <div class="mt-2">${tags}</div>
+          </a>
+        `;
+      });
+    });
+  </script>
+  <style>
+    body {
+      font-family: 'Pretendard', sans-serif;
+      background-color: #0D0D0D;
+      color: #FFFFFF;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      font-weight: 700;
+    }
+    strong, b {
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <header class="bg-[#0D0D0D] text-white p-6 shadow text-center">
+    <h1 class="text-4xl font-bold text-[#D50000]">ZEROSECONDS</h1>
+    <p class="text-lg text-white mt-2">0초, 모든 창업의 시작점</p>
+  </header>
+
+  <main class="max-w-4xl mx-auto p-6">
+    <!-- 검색창 -->
+    <div class="mb-8">
+      <input type="text" placeholder="질문을 검색해보세요..." class="w-full p-3 border border-gray-700 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#D50000] bg-[#1a1a1a] text-white" />
+    </div>
+
+    <!-- 인기 질문 슬라이더 -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-bold mb-4">🔥 인기 질문</h2>
+      <div class="overflow-x-auto whitespace-nowrap space-x-4 pb-2">
+        <a href="#" class="inline-block w-72 bg-[#1a1a1a] rounded-lg shadow p-4 align-top">
+          <h4 class="text-[#D50000] font-bold">Q. (데이터 기반 인기 질문 예정)</h4>
+          <p class="text-sm text-gray-400 mt-2">(내용)</p>
+        </a>
+      </div>
+    </section>
+
+    <!-- 추천 창업 아이템 배너 -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-bold mb-4">🚀 추천 창업 아이템</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div class="bg-[#2a2a2a] rounded-lg p-6 shadow">
+          <h3 class="text-xl font-bold text-[#FFC400] mb-2">친환경 식물 키트 구독</h3>
+          <p class="text-gray-300 text-sm">지속 가능한 식물 키트를 매월 배송하여 환경과 교육을 모두 만족시키는 창업 아이템입니다.</p>
+        </div>
+        <div class="bg-[#2a2a2a] rounded-lg p-6 shadow">
+          <h3 class="text-xl font-bold text-[#FFC400] mb-2">청년 창업자용 금융 가이드 앱</h3>
+          <p class="text-gray-300 text-sm">창업 준비 중인 학생들이 금융지식을 습득하고 실제 적용할 수 있도록 도와주는 앱 서비스입니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="mb-12">
+      <h2 class="text-2xl font-bold mb-4">최신 질문</h2>
+      <div class="space-y-4" id="question-list">
+        <p class="text-gray-400">질문을 불러오는 중입니다...</p>
+      </div>
+    </section>
+  </main>
+
+<script>
+  const input = document.querySelector('input[type="text"]');
+  const list = document.getElementById('question-list');
+
+  input.addEventListener('input', function () {
+    const keyword = input.value.toLowerCase();
+    const cards = document.querySelectorAll('#question-list > a');
+    cards.forEach(card => {
+      const text = card.textContent.toLowerCase();
+      card.style.display = text.includes(keyword) ? 'block' : 'none';
+    });
+  });
+</script>
+</body>
+</html>

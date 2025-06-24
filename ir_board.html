@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IR 등록 | 제로세컨즈</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/pretendard@1.3.5/dist/web/static/pretendard.css" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Pretendard', sans-serif;
+      background-color: #0D0D0D;
+      color: #FFFFFF;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+    input, textarea {
+      background-color: #1a1a1a;
+      border: 1px solid #444;
+      border-radius: 0.375rem;
+      padding: 0.75rem;
+      color: white;
+      width: 100%;
+    }
+    input[type="file"] {
+      padding: 0.5rem;
+    }
+    button {
+      background-color: #D50000;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      color: white;
+      font-weight: 600;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body class="p-6 max-w-xl mx-auto">
+  <h1 class="text-3xl font-bold text-center text-[#FFC400] mb-6">IR 게시글 등록</h1>
+
+  <form id="irForm">
+    <div class="mb-4">
+      <label for="title">제목</label>
+      <input type="text" id="title" name="title" required />
+    </div>
+    <div class="mb-4">
+      <label for="summary">요약 설명</label>
+      <textarea id="summary" name="summary" rows="4" required></textarea>
+    </div>
+    <div class="mb-4">
+      <label for="tags">태그 (쉼표로 구분)</label>
+      <input type="text" id="tags" name="tags" />
+    </div>
+    <div class="mb-4">
+      <label for="file">IR 요약 자료 (PDF 또는 이미지)</label>
+      <input type="file" id="file" name="file" accept=".pdf,.jpg,.jpeg,.png" required />
+    </div>
+    <button type="submit">등록하기</button>
+  </form>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCV-ItueTCjbuHnVQqpcYb5vkRsf2zMcXU",
+      authDomain: "sec-44e76.firebaseapp.com",
+      projectId: "sec-44e76",
+      storageBucket: "sec-44e76.appspot.com",
+      messagingSenderId: "573561144547",
+      appId: "1:573561144547:web:433f70ce3db05c05ed71d6",
+      measurementId: "G-D11E63PZ1G"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    document.getElementById("irForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const title = document.getElementById("title").value;
+      const summary = document.getElementById("summary").value;
+      const tags = document.getElementById("tags").value.split(',').map(tag => tag.trim());
+      const fileInput = document.getElementById("file");
+      const file = fileInput.files[0];
+
+      if (!file) return;
+
+      const storageRef = ref(storage, `ir-files/${file.name}`);
+      await uploadBytes(storageRef, file);
+      const fileURL = await getDownloadURL(storageRef);
+
+      await addDoc(collection(db, "irs"), {
+        title,
+        summary,
+        tags,
+        fileURL,
+        fileType: file.type,
+        createdAt: serverTimestamp()
+      });
+
+      alert("IR이 성공적으로 등록되었습니다.");
+      window.location.href = "ir-list.html";
+    });
+  </script>
+</body>
+</html>

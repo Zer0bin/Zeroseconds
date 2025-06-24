@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IR 게시판 - 제로세컨즈</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/pretendard@1.3.5/dist/web/static/pretendard.css" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Pretendard', sans-serif;
+      background-color: #0D0D0D;
+      color: #FFFFFF;
+    }
+    h1, h2, h3, h4 {
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <header class="bg-[#0D0D0D] text-white p-6 shadow text-center">
+    <h1 class="text-3xl font-bold text-[#D50000]">IR 게시판</h1>
+    <p class="mt-2 text-sm">스타트업 IR 문서를 공유하고 피드백을 받아보세요</p>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-6 py-8">
+    <div class="flex justify-end mb-6">
+      <a href="ir-upload.html" class="bg-[#D50000] hover:bg-red-700 text-white py-2 px-4 rounded">IR 등록하기</a>
+    </div>
+
+    <div id="ir-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- IR 카드 목록 동적으로 삽입 -->
+    </div>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCV-ItueTCjbuHnVQqpcYb5vkRsf2zMcXU",
+      authDomain: "sec-44e76.firebaseapp.com",
+      projectId: "sec-44e76",
+      storageBucket: "sec-44e76.appspot.com",
+      messagingSenderId: "573561144547",
+      appId: "1:573561144547:web:433f70ce3db05c05ed71d6"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const listDiv = document.getElementById("ir-list");
+
+    async function loadIRs() {
+      const querySnapshot = await getDocs(collection(db, "irs"));
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const card = document.createElement("a");
+        card.href = `ir-detail.html?id=${doc.id}`;
+        card.className = "block rounded-lg shadow bg-[#1a1a1a] p-4 hover:bg-[#2a2a2a] transition";
+        card.innerHTML = `
+          ${data.imageUrl ? `<img src="${data.imageUrl}" alt="썸네일" class="w-full h-40 object-cover rounded mb-4">` : ""}
+          <h3 class="text-xl font-bold text-[#FFC400] mb-1">${data.title}</h3>
+          <p class="text-sm text-gray-300 mb-2">${data.summary || "요약 정보 없음"}</p>
+          <div>
+            ${(data.tags || []).map(tag => `<span class='inline-block bg-[#333] text-[#FFC400] text-xs px-2 py-1 rounded mr-1'>#${tag}</span>`).join('')}
+          </div>
+        `;
+        listDiv.appendChild(card);
+      });
+    }
+
+    loadIRs();
+  </script>
+</body>
+</html>
